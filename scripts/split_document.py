@@ -1,49 +1,50 @@
 from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from transformers import AutoTokenizer
 import os
 import logging
 
+# Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-def split_pdf_into_chunks(file_path, chunk_size=512, chunk_overlap=100):
+EMBEDDING_MODEL_NAME = "thenlper/gte-small"
+
+def split_document_into_chunks(file_path: str, chunk_size: int, tokenizer_name: str = EMBEDDING_MODEL_NAME):
     """
-    Load a PDF document and split it into smaller chunks for processing.
-    
+    Load a document and split it into smaller chunks for processing.
+
     Args:
-        file_path (str): Path to the PDF file.
-        chunk_size (int): The maximum size of each chunk (number of characters).
-        chunk_overlap (int): Overlap between chunks to maintain context.
-        
+        file_path (str): Path to the document file.
+        chunk_size (int): The maximum size of each chunk (number of tokens).
+        tokenizer_name (str): The name of the tokenizer to use for splitting the document.
+
     Returns:
         List of split document chunks.
     """
-    # Check if the PDF file exists
+    # Check if the document file exists
     if not os.path.isfile(file_path):
         logging.error(f"The file '{file_path}' does not exist.")
         return None
-    
-    # Load the PDF using PyPDFLoader
+
+    # Load the document using PyPDFLoader
     loader = PyPDFLoader(file_path)
-    lazy_pages = loader.lazy_load()
-    
-    pages = [page for page in lazy_pages]  # Load all pages into memory
-    logging.info(f"The PDF document has been loaded successfully. Total number of pages: {len(pages)}.")
-    
-    # Initialize a text splitter with recursive character splitting strategy
-    text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=chunk_size,       # Maximum size of each chunk (number of characters)
-        chunk_overlap=chunk_overlap  # Overlap between chunks to maintain context
+    pages = loader.load()
+    logging.info(f"The document has been loaded successfully. Total number of pages: {len(pages)}.")
+
+    # Initialize a text splitter 
+    text_splitter = RecursiveCharacterTextSplitter.from_huggingface_tokenizer(
+        AutoTokenizer.from_pretrained(tokenizer_name),
+        chunk_size=chunk_size,
+        chunk_overlap=int(chunk_size * 0.1), # 10% overlap between chunks
+        add_start_index=True, 
+        strip_whitespace=True
     )
-    
-    # Split the pages into smaller chunks
+
     chunks = text_splitter.split_documents(pages)
-    logging.info(f"The PDF document has been split into {len(chunks)} chunks.")
-    
+    logging.info(f"The document has been split into {len(chunks)} chunks.")
+
     return chunks
 
-def main():
-    file_path = "data/raw/TA-9-2024-0138_EN.pdf"  # Path to the PDF file
-    split_chunks = split_pdf_into_chunks(file_path)
 
-if __name__ == "__main__":
-    main()
+
+
