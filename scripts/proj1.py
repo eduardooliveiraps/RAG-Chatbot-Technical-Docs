@@ -4,6 +4,7 @@ from sentence_transformers import SentenceTransformer
 import chromadb
 
 # 1. Split the document
+
 loader = PyPDFLoader("data/raw/TA-9-2024-0138_EN.pdf")
 documents = loader.load()
 text_splitter = RecursiveCharacterTextSplitter(chunk_size=512, chunk_overlap=100)
@@ -37,8 +38,25 @@ results = collection.query(
         n_results=5
     )
 
+# 4. Prompt template
+
+context = ""
+
 for i, doc_id in enumerate(results['ids'][0]):
+    chunk_content = split_docs[int(doc_id.split('_')[2])].page_content
+    context += f"\nChunk {i+1}: {chunk_content}\n"
     print(f"Chunk ID: {doc_id}")
     print(f"Distance: {results['distances'][0][i]}")
-    print(f"Chunk Content: {split_docs[int(doc_id.split('_')[2])].page_content}")
+    print(f"Chunk Content: {chunk_content}")
     print("---------")
+
+prompt_template = f"""
+Answer the question based only on the following context:
+{context}
+Answer the question based on the above context: {query}.
+Provide a detailed answer.
+Don’t justify your answers.
+Don’t give information not mentioned in the CONTEXT INFORMATION.
+Do not say "according to the context" or "mentioned in the context" or similar.
+"""
+print(prompt_template)
