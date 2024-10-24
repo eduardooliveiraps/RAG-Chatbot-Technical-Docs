@@ -2,6 +2,7 @@ from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from sentence_transformers import SentenceTransformer
 import chromadb
+import cohere
 
 # 1. Split the document
 
@@ -28,7 +29,6 @@ for i, embedding in enumerate(embeddings):
             embeddings=[embedding], 
              metadatas=[metadata]
         )
-
 
 # 3. Create a retriever
 
@@ -60,3 +60,11 @@ Don’t give information not mentioned in the CONTEXT INFORMATION.
 Do not say "according to the context" or "mentioned in the context" or similar.
 """
 print(prompt_template)
+
+co = cohere.Client('Fcu5GXKilkxwAfdA85stnMI0mfU7Me5oLFDhyi5I')
+response = co.chat(
+  message=prompt_template,
+  model="command",
+  temperature=0.3
+)
+print(response.text)
