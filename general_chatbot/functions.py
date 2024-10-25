@@ -8,6 +8,7 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores.utils import DistanceStrategy
 from transformers import AutoModelForCausalLM, pipeline
 import faiss 
+import transformers
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -96,15 +97,14 @@ def initialize_reader_model(model_name: str = READER_MODEL_NAME):
     reader_llm = pipeline(
     "text-generation",
     model=model,
-    tokenizer=tokenizer,
-    max_length=512,  
+    tokenizer=tokenizer, 
     do_sample=True,
     temperature=0.7,
     repetition_penalty=1.2,
     return_full_text=False,
     )
     logging.info(f"Reader LLM model '{model_name}' initialized successfully.")
-    return reader_llm
+    return reader_llm, tokenizer
 
 # Function to retrieve relevant documents from the knowledge base
 def retrieve_relevant_docs(query: str, knowledge_vector_database, k: int = 5):
@@ -129,7 +129,7 @@ def retrieve_relevant_docs(query: str, knowledge_vector_database, k: int = 5):
     return retrieved_docs, context
 
 # Function to generate the final answer using the retrieved documents and LLM
-def generate_answer_from_docs(query: str, context: str, reader_llm, tokenizer, max_new_tokens=1000):
+def generate_answer_from_docs(query: str, context: str, reader_llm, tokenizer, max_new_tokens=512):
     """
     Generate an answer using the LLM based on the retrieved documents.
 
@@ -145,6 +145,14 @@ def generate_answer_from_docs(query: str, context: str, reader_llm, tokenizer, m
     """
     # Chat-style prompt for the model
     prompt_in_chat_format = [
+        {
+            "role": "system",
+            "content": """Using the information contained in the context,
+give a comprehensive answer to the question.
+Respond only to the question asked, response should be concise and relevant to the question.
+Provide the number of the source document when relevant.
+If the answer cannot be deduced from the context, do not give an answer.""",
+    },
         {
             "role": "user",
             "content": f"""Context:
@@ -168,9 +176,3 @@ def generate_answer_from_docs(query: str, context: str, reader_llm, tokenizer, m
     answer = generated_text[0]['generated_text']
 
     return answer
-
-
-
-
-
-
