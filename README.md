@@ -76,6 +76,8 @@ I found [this GitHub issue](https://github.com/charann29/opensource/issues/356) 
 
 Once the Streamlit server is running, open the provided URL in your browser to interact with the chatbot. Ask questions about the AI Act, and the chatbot will provide relevant answers. Each response may take approximately 60 seconds to generate, depending on your machine's processing capabilities.
 
+![Chatbot Interface](images/image.png)
+
 ## Conclusion
 
 This project demonstrates how to build a RAG chatbot for technical documentation. The chatbot can answer questions about the AI Act, providing relevant information from the document. You can extend this project by using different documents, customizing the prompt template, or fine-tuning the models for better performance.
