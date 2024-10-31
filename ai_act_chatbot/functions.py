@@ -60,19 +60,20 @@ def retrieve_relevant_docs(query: str, knowledge_vector_database, k: int = 5):
         k (int): The number of top documents to retrieve.
     
     Returns:
-        A tuple containing the retrieved documents and their combined text.
+        A tuple containing the retrieved documents, their combined text, and their metadata.
     """
     logging.info(f"Starting retrieval for query: {query}")
     retrieved_docs = knowledge_vector_database.similarity_search(query=query, k=k)
 
     retrieved_docs_text = [doc.page_content for doc in retrieved_docs]
+    retrieved_docs_metadata = [doc.metadata for doc in retrieved_docs]
     context = "\nExtracted documents:\n"
     context += "".join([f"Document {i}:::\n{doc}\n" for i, doc in enumerate(retrieved_docs_text)])
 
-    return retrieved_docs, context
+    return retrieved_docs, context, retrieved_docs_metadata
 
 # Function to generate the final answer using the retrieved documents and LLM
-def generate_answer_from_docs(query: str, context: str, reader_llm, tokenizer, max_new_tokens=512):
+def generate_answer_from_docs(query: str, context: str, reader_llm, tokenizer, retrieved_docs_metadata, max_new_tokens=512):
     """
     Generate an answer using the LLM based on the retrieved documents.
 
@@ -81,12 +82,13 @@ def generate_answer_from_docs(query: str, context: str, reader_llm, tokenizer, m
         context (str): The text of the retrieved documents.
         reader_llm: The text generation pipeline (LLM).
         tokenizer: The tokenizer for formatting the chat-based prompt.
+        retrieved_docs_metadata (list): Metadata of the retrieved documents.
         max_new_tokens (int): Maximum number of tokens for the generated answer.
 
     Returns:
-        The generated answer from the LLM.
+        The generated answer from the LLM, including the page numbers of the retrieved chunks.
     """
-    # Chat-style prompt for the model
+    # Chat-style prompt for the model - prompt template
     prompt_in_chat_format = [
         {
             "role": "system",
@@ -95,7 +97,7 @@ give a comprehensive answer to the question.
 Respond only to the question asked, response should be concise and relevant to the question.
 Provide the number of the source document when relevant.
 If the answer cannot be deduced from the context, do not give an answer.""",
-    },
+        },
         {
             "role": "user",
             "content": f"""Context:
@@ -107,7 +109,7 @@ If the answer cannot be deduced from the context, do not give an answer.""",
         },
     ]
 
-    # Apply the chat-style template using tokenizer (if needed)
+    # Apply the chat template to the prompt
     rag_prompt_template = tokenizer.apply_chat_template(
         prompt_in_chat_format, tokenize=False, add_generation_prompt=True
     )
@@ -117,6 +119,13 @@ If the answer cannot be deduced from the context, do not give an answer.""",
 
     # Process the generated text
     answer = generated_text[0]['generated_text']
+
+    # Extract page numbers from metadata
+    page_numbers = sorted(set([metadata['page'] for metadata in retrieved_docs_metadata]))
+    page_numbers_str = ", ".join(map(str, page_numbers))
+
+    # Append page numbers to the answer
+    answer += f"\n\nPages retrieved from the document and included in the context for generating the answer: {page_numbers_str}"
 
     return answer
 
@@ -135,8 +144,8 @@ if __name__ == "__main__":
     query = "What is the purpose of this Regulation?"
 
     # Retrieve relevant documents
-    retrieved_docs, context = retrieve_relevant_docs(query, knowledge_vector_database)
+    retrieved_docs, context, retrieved_docs_metadata = retrieve_relevant_docs(query, knowledge_vector_database)
 
     # Generate the answer
-    answer = generate_answer_from_docs(query, context, reader_llm, tokenizer)
+    answer = generate_answer_from_docs(query, context, reader_llm, tokenizer, retrieved_docs_metadata)
     print("Answer:", answer)

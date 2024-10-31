@@ -36,11 +36,6 @@ def load_knowledge_base():
         st.error("Failed to load knowledge vector database. Please check the logs.")
         return None
 
-# Streamlit page setup
-st.set_page_config(page_title="AI Act Chatbot", layout="centered")
-
-st.title("📄 AI Act Chatbot")
-
 # Initialize the chatbot interface session state
 if "generated" not in st.session_state:
     st.session_state["generated"] = []
@@ -76,8 +71,8 @@ else:
 # Ensure user input is taken only if document is loaded
 if user_input and st.session_state["document_loaded"]:
     try:
-        retrieved_docs, context = retrieve_relevant_docs(user_input, st.session_state["knowledge_vector_database"])
-        answer = generate_answer_from_docs(user_input, context, st.session_state["model"], st.session_state["tokenizer"])
+        retrieved_docs, context, retrieved_docs_metadata = retrieve_relevant_docs(user_input, st.session_state["knowledge_vector_database"])
+        answer = generate_answer_from_docs(user_input, context, st.session_state["model"], st.session_state["tokenizer"], retrieved_docs_metadata)
 
         # Display conversation history
         st.session_state.past.append(user_input)
