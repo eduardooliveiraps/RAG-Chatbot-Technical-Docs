@@ -57,7 +57,7 @@ if st.session_state["knowledge_vector_database"] is None:
     st.session_state["document_loaded"] = True  # Set document loaded flag
 
 # Chatbot Interface
-st.subheader("Chat with the AI Act Document")
+st.subheader("📄 Chat with the AI Act Document")
 
 # Define user_input variable to avoid NameError
 user_input = None

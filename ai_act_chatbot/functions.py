@@ -73,7 +73,7 @@ def retrieve_relevant_docs(query: str, knowledge_vector_database, k: int = 5):
     return retrieved_docs, context, retrieved_docs_metadata
 
 # Function to generate the final answer using the retrieved documents and LLM
-def generate_answer_from_docs(query: str, context: str, reader_llm, tokenizer, retrieved_docs_metadata, max_new_tokens=300):
+def generate_answer_from_docs(query: str, context: str, reader_llm, tokenizer, retrieved_docs_metadata, max_new_tokens=500):
     """
     Generate an answer using the LLM based on the retrieved documents.
 
